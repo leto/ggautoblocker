@@ -1,16 +1,12 @@
 #!/usr/bin/perl -w
 
 use strict;
-
+use POSIX;
 use Net::Twitter;
 
 # Needs read/write access!
 
-my $consumer_key = "";
-my $consumer_secret = "";
-
-my $access_token = "";
-my $access_secret = "";
+my %config = do 'config.pl';
 
 my $sourcelist_file = "sourcelist.txt";
 my $whitelist_file = "whitelist.txt";
@@ -29,10 +25,10 @@ my ( @follower_ids, @myfollower_ids, @sheeple_ids );
 my $nt = Net::Twitter->new(
 	traits			=> [qw/API::RESTv1_1/],
 	ssl			=> 1,
-	consumer_key		=> $consumer_key,
-	consumer_secret		=> $consumer_secret,
-	access_token		=> $access_token,
-	access_token_secret	=> $access_secret
+	consumer_key		=> $config{consumer_key},
+	consumer_secret		=> $config{consumer_secret},
+	access_token		=> $config{access_token},
+	access_token_secret	=> $config{access_secret}
 );
 
 
@@ -42,11 +38,13 @@ my $nt = Net::Twitter->new(
 sub get_rate_limit {
 	my $type = shift;
 
-	my $m = $nt->rate_limit_status;
+	my $m = $nt->rate_limit_status({ authenticate => 1});
 
 		if ( $m->{'resources'}->{'application'}->{'/application/rate_limit_status'}->{'remaining'} == 0 ) {
-			print " -- API limit reached, waiting for ". ( $m->{'resources'}->{'application'}->{'/application/rate_limit_status'}->{'reset'} - time ) . " seconds --\n" if $debug;
+			my $tmp = $m->{'resources'}->{'application'}->{'/application/rate_limit_status'}->{'reset'} - time;
+			print " -- API limit reached at " . strftime("%H:%M:%S", localtime) . ", waiting for ". int ($tmp / 60) . " minutes and " . ($tmp % 60) . " seconds --\n" if $debug;
 		sleep ( $m->{'resources'}->{'application'}->{'/application/rate_limit_status'}->{'reset'} - time + 1 );
+		$m = $nt->rate_limit_status({ authenticate => 1 }); 
 	}
 
 	if ( $type =~ /followers/ ) {
@@ -70,7 +68,8 @@ sub wait_for_rate_limit {
 	my $limit = get_rate_limit($type);
 
 	if ( $limit->{'remaining'} == 0 ) {
-		print " -- API limit reached, waiting for ". ( $limit->{'reset'} - time ) . " seconds --\n" if $debug;
+		my $tmp = $limit->{'reset'} - time;
+		print " -- API limit reached at " . strftime("%H:%M:%S", localtime) . ", waiting for ". int ($tmp / 60 ). " minutes and " . ($tmp % 60) . " seconds --\n" if $debug;
 		sleep ( $limit->{'reset'} - time + 1 );
 	}
 }
