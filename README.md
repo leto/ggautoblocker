@@ -16,5 +16,19 @@ To block everyone on the current list, log in to Twitter, then [subscribe to the
 
 Requires Net::Twitter which has a huge level of crazy deps.
 
+To install dependencies (in order of awesomeness)
+
+[cpanminus](https://cpanmin.us)
+
+	cpanm --installdeps .
+
+Module::Build
+
+	perl Build.PL && ./Build installdeps
+
+Or just manually list each dependency to plain ol' 'cpan'
+
+	cpan Net::Twitter # attempt to use built-in CPAN client :/
+
 If you add CHSommers or Adam Baldwin back to the list of users, it's going to take a really long time to run because of API limits. Ugh. Literally the worst, Twitter. Be less annoying.
 
